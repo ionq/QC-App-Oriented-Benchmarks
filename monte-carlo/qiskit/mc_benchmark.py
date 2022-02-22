@@ -382,6 +382,9 @@ def run(min_qubits=MIN_QUBITS, max_qubits=10, max_circuits=1, num_shots=100,
     # Accumulate metrics asynchronously as circuits complete
     for num_qubits in range(min_qubits, max_qubits + 1):
 
+        # reset random seed
+        np.random.seed(0)
+
         input_size = num_qubits - 1 # TODO: keep using inputsize? only used in num_circuits
         
         # as circuit width grows, the number of counting qubits is increased
@@ -435,7 +438,7 @@ def run(min_qubits=MIN_QUBITS, max_qubits=10, max_circuits=1, num_shots=100,
     print("\nInverse QFT Circuit ="); print(QFTI_ if QFTI_ != None else "  ... too large!")
 
     # Plot metrics for all circuit sizes
-    metrics.plot_metrics(f"Benchmark Results - Monte Carlo Sampling ({method}) - Qiskit")
+    metrics.plot_metrics_aq(f"Benchmark Results - Monte Carlo Sampling ({method}) - Qiskit")
     
     
         

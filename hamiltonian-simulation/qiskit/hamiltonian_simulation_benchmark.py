@@ -236,6 +236,9 @@ def run(min_qubits=2, max_qubits=8, max_circuits=3, num_shots=100,
     # Accumulate metrics asynchronously as circuits complete
     for num_qubits in range(min_qubits, max_qubits + 1):
 
+        # reset random seed
+        np.random.seed(0)
+
         # determine number of circuits to execute for this group
         num_circuits = min(1, max_circuits)
         
@@ -284,7 +287,7 @@ def run(min_qubits=2, max_qubits=8, max_circuits=3, num_shots=100,
         print(XXYYZZ_)
         
     # Plot metrics for all circuit sizes
-    metrics.plot_metrics(f"Benchmark Results - Hamiltonian Simulation - Qiskit")
+    metrics.plot_metrics_aq(f"Benchmark Results - Hamiltonian Simulation - Qiskit")
 
 
 # if main, execute method
