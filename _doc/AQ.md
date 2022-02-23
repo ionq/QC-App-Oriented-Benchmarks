@@ -16,10 +16,8 @@ Note that the algorithms used to define #AQ version 1.0 are a subset of all the 
 5. If an oracle uses qubits that return to the same state as at the beginning of the computation (such as ancilla qubits), these qubits must be traced out before computing the success metric.
 
 6. Any further optimization is allowed as long as (a) the circuit to be executed on QC implements the same unitary as submitted, and (b) the optimizer does not target any specific benchmark circuit.
-
- a. These optimizations may reduce the depth of the circuit that is actually executed. Since benchmarking is ultimately for the whole quantum computing system, this is acceptable. However, the final depth of the executed circuit (the number and description of entangling gate operation) must be explicitly provided.
-
- b. Provision (b) will prevent the optimizer from turning on a special purpose module solely for the particular benchmark, thus preventing gaming of the benchmark to a certain extent.
+ - a. These optimizations may reduce the depth of the circuit that is actually executed. Since benchmarking is ultimately for the whole quantum computing system, this is acceptable. However, the final depth of the executed circuit (the number and description of entangling gate operation) must be explicitly provided.
+ - b. Provision (b) will prevent the optimizer from turning on a special purpose module solely for the particular benchmark, thus preventing gaming of the benchmark to a certain extent.
 
 7. Error mitigation techniques like randomized compilation and post-processing have to be reported if they are used. Post-processing techniques may not use knowledge of the output distribution over computational basis states.
 
