@@ -49,7 +49,7 @@ Then, define #AQ = N, where
 
 ![N={n: (Fc-c>t)  ((cC) & (wcn) & (dcn2))}](images/aq/equation3.png)
 
-The data should be presented as a volumetric plot. The code to plot this is provided in this repository.
+The data should be presented as a volumetric plot. The code to plot this is provided in [this repository](../aq-qiskit.ipynb.template).
 
 An additional accompanying table should list for each circuit in the benchmark suite the number of qubits, the number of each class of native gates used to execute the circuit, the number of repetitions *s<sub>c</sub>* of each circuit in order to calculate *F<sub>c</sub>*, and *F<sub>c</sub>* for each circuit.
 
