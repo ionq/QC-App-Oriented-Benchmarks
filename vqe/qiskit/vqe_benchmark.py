@@ -299,7 +299,7 @@ def analyze_and_print_result(qc, result, num_qubits, references, num_shots):
 
 ################ Benchmark Loop
 
-# Execute program with default parameters
+# Execute program with default parameters, AQ only gives sensible answer with method=1
 def run(min_qubits=4, max_qubits=10, max_circuits=3, num_shots=4092, method=1,
         backend_id="qasm_simulator", provider_backend=None,
         hub="ibm-q", group="open", project="main", exec_options=None):
