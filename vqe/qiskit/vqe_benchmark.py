@@ -294,6 +294,7 @@ def analyze_and_print_result(qc, result, num_qubits, references, num_shots):
     # modify fidelity based on the coefficient
     if (len(total_name.split()) == 2):
         fidelity *= ( abs(float(total_name.split()[1])) / normalization )
+        aq_fidelity *= ( abs(float(total_name.split()[1])) / normalization )
 
     return fidelity, aq_fidelity
 
