@@ -87,12 +87,16 @@ def CPhase(angle, exponent):
 def analyze_and_print_result(qc, result, num_counting_qubits, theta, num_shots):
 
     # get results as times a particular theta was measured
-    counts = bitstring_to_theta(result.get_counts(qc), num_counting_qubits)    
+    bit_counts = result.get_counts(qc)
+    counts = bitstring_to_theta(bit_counts, num_counting_qubits)
     
     if verbose: print(f"For theta value {theta}, measured: {counts}")
 
     # correct distribution is measuring theta 100% of the time
     correct_dist = {theta: 1.0}
+
+    # calculate expected output histogram
+    bit_correct_dist = theta_to_bitstring(theta, num_counting_qubits)
 
     # generate thermal_dist with amplitudes instead, to be comparable to correct_dist
     bit_thermal_dist = metrics.uniform_dist(num_counting_qubits)
@@ -100,8 +104,13 @@ def analyze_and_print_result(qc, result, num_counting_qubits, theta, num_shots):
 
     # use our polarization fidelity rescaling
     fidelity = metrics.polarization_fidelity(counts, correct_dist, thermal_dist)
+    aq_fidelity = metrics.hellinger_fidelity_with_expected(bit_counts, bit_correct_dist)
 
-    return counts, fidelity
+    return counts, fidelity, aq_fidelity
+
+def theta_to_bitstring(theta, num_counting_qubits):
+    counts = {int(format( int(theta * (2**num_counting_qubits)), "0"+str(num_counting_qubits)+"b"),2): 1.0}
+    return counts
 
 def bitstring_to_theta(counts, num_counting_qubits):
     theta_counts = {}
@@ -140,8 +149,9 @@ def run(min_qubits=3, max_qubits=8, max_circuits=3, num_shots=100,
 
         # determine fidelity of result set
         num_counting_qubits = int(num_qubits) - 1
-        counts, fidelity = analyze_and_print_result(qc, result, num_counting_qubits, float(theta), num_shots)
+        counts, fidelity, aq_fidelity = analyze_and_print_result(qc, result, num_counting_qubits, float(theta), num_shots)
         metrics.store_metric(num_qubits, theta, 'fidelity', fidelity)
+        metrics.store_metric(num_qubits, theta, 'aq_fidelity', aq_fidelity)
 
     # Initialize execution module using the execution result handler above and specified backend_id
     ex.init_execution(execution_handler)

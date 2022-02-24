@@ -289,12 +289,13 @@ def analyze_and_print_result(qc, result, num_qubits, references, num_shots):
 
     # compute fidelity
     fidelity = metrics.polarization_fidelity(counts, correct_dist)
+    aq_fidelity = metrics.hellinger_fidelity_with_expected(counts, correct_dist)
 
     # modify fidelity based on the coefficient
     if (len(total_name.split()) == 2):
         fidelity *= ( abs(float(total_name.split()[1])) / normalization )
 
-    return fidelity
+    return fidelity, aq_fidelity
 
 ################ Benchmark Loop
 
@@ -339,12 +340,14 @@ def run(min_qubits=4, max_qubits=10, max_circuits=3, num_shots=4092, method=1,
             with open(filename) as f:
                 references = json.load(f)
 
-        fidelity = analyze_and_print_result(qc, result, num_qubits, references, num_shots)
+        fidelity, aq_fidelity = analyze_and_print_result(qc, result, num_qubits, references, num_shots)
 
         if len(qc.name.split()) == 2:
             metrics.store_metric(num_qubits, qc.name.split()[0], 'fidelity', fidelity)
+            metrics.store_metric(num_qubits, qc.name.split()[0], 'aq_fidelity', aq_fidelity)
         else:
             metrics.store_metric(num_qubits, qc.name.split()[2], 'fidelity', fidelity)
+            metrics.store_metric(num_qubits, qc.name.split()[2], 'aq_fidelity', aq_fidelity)
 
     # Initialize execution module using the execution result handler above and specified backend_id
     ex.init_execution(execution_handler)
