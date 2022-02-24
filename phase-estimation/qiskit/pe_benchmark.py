@@ -109,7 +109,7 @@ def analyze_and_print_result(qc, result, num_counting_qubits, theta, num_shots):
     return counts, fidelity, aq_fidelity
 
 def theta_to_bitstring(theta, num_counting_qubits):
-    counts = {int(format( int(theta * (2**num_counting_qubits)), "0"+str(num_counting_qubits)+"b"),2): 1.0}
+    counts = {format( int(theta * (2**num_counting_qubits)), "0"+str(num_counting_qubits)+"b"): 1.0}
     return counts
 
 def bitstring_to_theta(counts, num_counting_qubits):
