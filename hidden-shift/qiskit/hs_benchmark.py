@@ -125,8 +125,9 @@ def analyze_and_print_result (qc, result, num_qubits, secret_int, num_shots):
 
     # use our polarization fidelity rescaling
     fidelity = metrics.polarization_fidelity(counts, correct_dist)
+    aq_fidelity = metrics.hellinger_fidelity_with_expected(counts, correct_dist)
         
-    return counts, fidelity
+    return counts, fidelity, aq_fidelity
 
 ################ Benchmark Loop
 
@@ -151,8 +152,9 @@ def run (min_qubits=2, max_qubits=6, max_circuits=3, num_shots=100,
      
         # determine fidelity of result set
         num_qubits = int(num_qubits)
-        counts, fidelity = analyze_and_print_result(qc, result, num_qubits, int(s_int), num_shots)
+        counts, fidelity, aq_fidelity = analyze_and_print_result(qc, result, num_qubits, int(s_int), num_shots)
         metrics.store_metric(num_qubits, s_int, 'fidelity', fidelity)
+        metrics.store_metric(num_qubits, s_int, 'aq_fidelity', aq_fidelity)
 
     # Initialize execution module using the execution result handler above and specified backend_id
     ex.init_execution(execution_handler)
