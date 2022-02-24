@@ -37,7 +37,7 @@ from datetime import datetime
 # Raw and aggregate circuit metrics
 circuit_metrics = {  }
 group_metrics = { "groups": [],
-    "avg_create_times": [], "avg_elapsed_times": [], "avg_exec_times": [], "avg_fidelities": [],
+    "avg_create_times": [], "avg_elapsed_times": [], "avg_exec_times": [], "avg_fidelities": [], "avg_aq_fidelities": [],
     "avg_depths": [], "avg_xis": [], "avg_tr_depths": [], "avg_tr_xis": [], "avg_tr_n2qs": [],
     "avg_exec_creating_times": [], "avg_exec_validating_times": [], "avg_exec_running_times": []
 }
@@ -112,6 +112,7 @@ def init_metrics ():
     group_metrics["avg_elapsed_times"] = []
     group_metrics["avg_exec_times"] = []
     group_metrics["avg_fidelities"] = []
+    group_metrics["avg_aq_fidelities"] = []
     
     group_metrics["avg_depths"] = []
     group_metrics["avg_xis"] = []
@@ -161,6 +162,7 @@ def aggregate_metrics_for_group (group):
         group_elapsed_time = 0
         group_exec_time = 0
         group_fidelity = 0
+        group_aq_fidelity = 0
         group_depth = 0
         group_xi = 0
         group_tr_depth = 0
@@ -180,6 +182,7 @@ def aggregate_metrics_for_group (group):
                 if metric == "elapsed_time": group_elapsed_time += value
                 if metric == "exec_time": group_exec_time += value
                 if metric == "fidelity": group_fidelity += value
+                if metric == "aq_fidelity": group_aq_fidelity += value
                 
                 if metric == "depth": group_depth += value
                 if metric == "xi": group_xi += value
@@ -196,6 +199,7 @@ def aggregate_metrics_for_group (group):
         avg_elapsed_time = round(group_elapsed_time / num_circuits, 3)
         avg_exec_time = round(group_exec_time / num_circuits, 3)
         avg_fidelity = round(group_fidelity / num_circuits, 3)
+        avg_aq_fidelity = round(group_aq_fidelity / num_circuits, 3)
         
         avg_depth = round(group_depth / num_circuits, 0)
         avg_xi = round(group_xi / num_circuits, 3)
@@ -213,8 +217,9 @@ def aggregate_metrics_for_group (group):
         group_metrics["avg_create_times"].append(avg_create_time)
         group_metrics["avg_elapsed_times"].append(avg_elapsed_time)
         group_metrics["avg_exec_times"].append(avg_exec_time)
-        group_metrics["avg_fidelities"].append(avg_fidelity)
-        
+        group_metrics["avg_fidelities"].append(avg_fidelity)        
+        group_metrics["avg_aq_fidelities"].append(avg_aq_fidelity)
+
         if avg_depth > 0:
             group_metrics["avg_depths"].append(avg_depth)
         if avg_xi > 0:
@@ -294,7 +299,9 @@ def report_metrics_for_group (group):
                 print(f"Average Transpiling, Validating, Running Times for group {group} = {avg_exec_creating_time}, {avg_exec_validating_time}, {avg_exec_running_time} secs")
             
             avg_fidelity = group_metrics["avg_fidelities"][group_index]
+            avg_aq_fidelity = group_metrics["avg_aq_fidelities"][group_index]
             print(f"Average Fidelity for the {group} qubit group = {avg_fidelity}")
+            print(f"Average AQ Fidelity for the {group} qubit group = {avg_aq_fidelity}")
             
             print("")
             return
@@ -614,8 +621,8 @@ def plot_metrics_aq (suptitle="Circuit Width (Number of Qubits)", transform_qubi
     # flags for charts to show
     do_creates = True
     do_executes = True
-    do_fidelities = True
-    do_depths = True
+    do_aq_fidelities = True
+    do_2qs = True
     do_vbplot = True
     
     # check if we have depth metrics to show
@@ -625,8 +632,8 @@ def plot_metrics_aq (suptitle="Circuit Width (Number of Qubits)", transform_qubi
     if filters != None:
         if "create" not in filters: do_creates = False
         if "execute" not in filters: do_executes = False
-        if "fidelity" not in filters: do_fidelities = False
-        if "depth" not in filters: do_depths = False
+        if "aq_fidelity" not in filters: do_aq_fidelities = False
+        if "2q" not in filters: do_2qs = False
         if "vbplot" not in filters: do_vbplot = False
     
     # generate one-column figure with multiple bar charts, with shared X axis
@@ -636,8 +643,8 @@ def plot_metrics_aq (suptitle="Circuit Width (Number of Qubits)", transform_qubi
     numplots = 0
     if do_creates: numplots += 1
     if do_executes: numplots += 1
-    if do_fidelities: numplots += 1
-    if do_depths: numplots += 1
+    if do_aq_fidelities: numplots += 1
+    if do_2qs: numplots += 1
     
     rows = numplots
     
@@ -695,10 +702,10 @@ def plot_metrics_aq (suptitle="Circuit Width (Number of Qubits)", transform_qubi
         #axs[axi].set_xticklabels([])
         axi += 1
     
-    if do_fidelities:
+    if do_aq_fidelities:
         axs[axi].set_ylim([0, 1.0])
-        axs[axi].bar(group_metrics["groups"], group_metrics["avg_fidelities"]) 
-        axs[axi].set_ylabel('Avg Result Fidelity')
+        axs[axi].bar(group_metrics["groups"], group_metrics["avg_aq_fidelities"]) 
+        axs[axi].set_ylabel('Avg Result AQ Fidelity')
         
         if rows > 0 and not xaxis_set:
             axs[axi].sharex(axs[rows-1])
@@ -706,18 +713,17 @@ def plot_metrics_aq (suptitle="Circuit Width (Number of Qubits)", transform_qubi
             
         axi += 1
     
-    if do_depths:
-        if max(group_metrics["avg_tr_depths"]) < 20:
+    if do_2qs:
+        if max(group_metrics["avg_tr_n2qs"]) < 20:
             axs[axi].set_ylim([0, 20])  
-        axs[axi].bar(group_metrics["groups"], group_metrics["avg_depths"], 0.8)
-        axs[axi].bar(group_metrics["groups"], group_metrics["avg_tr_depths"], 0.5, color='C9') 
-        axs[axi].set_ylabel('Circuit Depth')
+        axs[axi].bar(group_metrics["groups"], group_metrics["avg_tr_n2qs"], 0.5, color='C9') 
+        axs[axi].set_ylabel('2Q Gates')
         
         if rows > 0 and not xaxis_set:
             axs[axi].sharex(axs[rows-1])
             xaxis_set = True
             
-        axs[axi].legend(['Circuit Depth', 'Transpiled Depth'], loc='upper left')
+        axs[axi].legend(['Transpiled 2Q Gates'], loc='upper left')
         axi += 1
     
     # shared x axis label
@@ -749,7 +755,7 @@ def plot_metrics_aq (suptitle="Circuit Width (Number of Qubits)", transform_qubi
         aq_metrics={}
         aq_metrics["groups"]=[]
         aq_metrics["tr_n2qs"]=[]
-        aq_metrics["fidelities"]=[]
+        aq_metrics["aq_fidelities"]=[]
         for group in circuit_metrics:
             if group=='subtitle':
                 continue
@@ -757,11 +763,11 @@ def plot_metrics_aq (suptitle="Circuit Width (Number of Qubits)", transform_qubi
             for key in circuit_metrics[group]:
                 aq_metrics["groups"].append(group)
                 aq_metrics["tr_n2qs"].append(circuit_metrics[group][key]["tr_n2q"])
-                aq_metrics["fidelities"].append(circuit_metrics[group][key]["fidelity"])
+                aq_metrics["aq_fidelities"].append(circuit_metrics[group][key]["aq_fidelity"])
         
         w_data = aq_metrics["groups"]
         n2q_tr_data = aq_metrics["tr_n2qs"]
-        f_data = aq_metrics["fidelities"]
+        f_data = aq_metrics["aq_fidelities"]
         
         try:
             #print(f"... {d_data} {d_tr_data}")
@@ -935,9 +941,9 @@ def plot_metrics_all_overlaid_aq (shared_data, backend_id, suptitle=None, imagen
             d_data = group_metrics["avg_depths"]
             d_tr_data = group_metrics["avg_tr_depths"]            
             n2q_tr_data = group_metrics["avg_tr_n2qs"]
-            f_data = group_metrics["avg_fidelities"]
+            f_data = group_metrics["avg_aq_fidelities"]
     
-            plot_volumetric_data(ax, w_data, n2q_tr_data, f_data, depth_base, fill=True,
+            plot_volumetric_data_aq(ax, w_data, n2q_tr_data, f_data, depth_base, fill=True,
                    label=appname, labelpos=(0.4, 0.6), labelrot=15, type=1, w_max=w_max)  
 
         # do annotation separately, spreading labels for readability
@@ -985,7 +991,7 @@ def plot_metrics_all_merged_individual_aq (shared_data, backend_id, suptitle=Non
             aq_metrics = shared_data[app]["aq_metrics"]
             w_data = aq_metrics["groups"]
             n2q_data = aq_metrics["tr_n2qs"]       
-            fidelity_data=aq_metrics["fidelities"]
+            fidelity_data=aq_metrics["aq_fidelities"]
             while True:
                 n2q_cutoff=AQ*AQ
                 fail_w=[float(w_data[i]) for i,v in enumerate(n2q_data) if (float(v) < n2q_cutoff and float(fidelity_data[i])<aq_cutoff)] 
@@ -1029,7 +1035,7 @@ def plot_metrics_all_merged_individual_aq (shared_data, backend_id, suptitle=Non
                 
             w_data = aq_metrics["groups"]          
             n2q_tr_data = aq_metrics["tr_n2qs"]
-            f_data = aq_metrics["fidelities"]
+            f_data = aq_metrics["aq_fidelities"]
     
             #plot_volumetric_data(ax, w_data, d_tr_data, f_data, depth_base,
                    #label=appname, labelpos=(0.4, 0.6), labelrot=50, type=1)  
@@ -1077,7 +1083,7 @@ def plot_metrics_all_merged_individual_aq (shared_data, backend_id, suptitle=Non
                 
             w_data = aq_metrics["groups"]
             n2q_tr_data=aq_metrics['tr_n2qs']
-            f_data = aq_metrics["fidelities"]            
+            f_data = aq_metrics["aq_fidelities"]            
 
             # plot data rectangles
             '''
@@ -1315,7 +1321,7 @@ def plot_metrics_all_merged_aq (shared_data, backend_id, suptitle=None, imagenam
             group_metrics = shared_data[app]["group_metrics"]
             w_data = group_metrics["groups"]
             n2q_data = group_metrics["avg_tr_n2qs"]       
-            fidelity_data=group_metrics["avg_fidelities"]
+            fidelity_data=group_metrics["avg_aq_fidelities"]
             while True:
                 n2q_cutoff=AQ*AQ
                 fail_w=[float(w_data[i]) for i,v in enumerate(n2q_data) if (float(v) < n2q_cutoff and float(fidelity_data[i])<aq_cutoff)] 
@@ -1361,7 +1367,7 @@ def plot_metrics_all_merged_aq (shared_data, backend_id, suptitle=None, imagenam
             d_data = group_metrics["avg_depths"]
             d_tr_data = group_metrics["avg_tr_depths"]            
             n2q_tr_data = group_metrics["avg_tr_n2qs"]
-            f_data = group_metrics["avg_fidelities"]
+            f_data = group_metrics["avg_aq_fidelities"]
     
             #plot_volumetric_data(ax, w_data, d_tr_data, f_data, depth_base,
                    #label=appname, labelpos=(0.4, 0.6), labelrot=50, type=1)  
@@ -1439,7 +1445,7 @@ def plot_metrics_all_merged_aq (shared_data, backend_id, suptitle=None, imagenam
             d_data = group_metrics["avg_depths"]
             d_tr_data = group_metrics["avg_tr_depths"]
             n2q_tr_data=group_metrics['avg_tr_n2qs']
-            f_data = group_metrics["avg_fidelities"]            
+            f_data = group_metrics["avg_aq_fidelities"]            
 
             # plot data rectangles
             '''
@@ -1452,7 +1458,7 @@ def plot_metrics_all_merged_aq (shared_data, backend_id, suptitle=None, imagenam
             
             #print(f"... plotting {appname}")
                 
-            plot_volumetric_data(ax, w_data, n2q_tr_data, f_data, depth_base,
+            plot_volumetric_data_aq(ax, w_data, n2q_tr_data, f_data, depth_base,
                    label=appname, labelpos=(0.4, 0.6), labelrot=15, type=1, fill=False, w_max=w_max)
         
         # do annotation separately, spreading labels for readability
@@ -1678,7 +1684,7 @@ def store_app_metrics (backend_id, circuit_metrics, group_metrics, app, start_ti
     aq_metrics={}
     aq_metrics["groups"]=[]
     aq_metrics["tr_n2qs"]=[]
-    aq_metrics["fidelities"]=[]
+    aq_metrics["aq_fidelities"]=[]
     for group in circuit_metrics:
         if group=='subtitle':
             continue
@@ -1686,7 +1692,7 @@ def store_app_metrics (backend_id, circuit_metrics, group_metrics, app, start_ti
         for key in circuit_metrics[group]:
             aq_metrics["groups"].append(group)
             aq_metrics["tr_n2qs"].append(circuit_metrics[group][key]["tr_n2q"])
-            aq_metrics["fidelities"].append(circuit_metrics[group][key]["fidelity"])
+            aq_metrics["aq_fidelities"].append(circuit_metrics[group][key]["aq_fidelity"])
 
 
     shared_data[app]["aq_metrics"] = aq_metrics
