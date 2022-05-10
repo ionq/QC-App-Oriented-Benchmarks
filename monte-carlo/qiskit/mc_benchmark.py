@@ -344,7 +344,7 @@ MIN_STATE_QUBITS_M1 = 2
 MAX_QUBITS=10
 
 # Execute program with default parameters
-def run(min_qubits=MIN_QUBITS, max_qubits=10, max_circuits=1, num_shots=100,
+def run(min_qubits=MIN_QUBITS, max_qubits=10, max_circuits=1, num_shots=2500,
         epsilon=0.05, degree=2, num_state_qubits=MIN_STATE_QUBITS, method = 2, # default, not exposed to users
         backend_id='qasm_simulator', provider_backend=None,
         hub="ibm-q", group="open", project="main", exec_options=None):

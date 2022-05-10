@@ -219,7 +219,7 @@ def grovers_dist(num_qubits, marked_item):
 MAX_QUBITS=8
 
 # Execute program with default parameters
-def run(min_qubits=2, max_qubits=6, max_circuits=3, num_shots=100,
+def run(min_qubits=2, max_qubits=6, max_circuits=3, num_shots=2500,
         use_mcx_shim=False,
         backend_id='qasm_simulator', provider_backend=None,
         hub="ibm-q", group="open", project="main", exec_options=None):

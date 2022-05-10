@@ -132,7 +132,7 @@ def analyze_and_print_result (qc, result, num_qubits, secret_int, num_shots):
 ################ Benchmark Loop
 
 # Execute program with default parameters
-def run (min_qubits=2, max_qubits=6, max_circuits=3, num_shots=100,
+def run (min_qubits=2, max_qubits=6, max_circuits=3, num_shots=2500,
         backend_id='qasm_simulator', provider_backend=None,
         hub="ibm-q", group="open", project="main", exec_options=None):
 
