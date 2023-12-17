@@ -12,10 +12,9 @@ from typing import Tuple
 from operator import itemgetter
 
 from conversion_lib.gate import Gate
+from conversion_lib.gate import HAS_GATE_ANGLE
 from conversion_lib.qubit_pool import QubitPool
-
-
-HAS_GATE_ANGLE = {"x", "y", "z", "rx", "ry", "rz", "xx", "yy", "zz"}
+from conversion_lib.utils import is_number
 
 
 def get_gate_type(op):
@@ -25,14 +24,9 @@ def get_gate_type(op):
 def gen_controls(gate: Gate) -> str:
     if len(gate.controls) == 0:
         return ""
-    controls = []
-    for i, control in enumerate(gate.controls):
-        controls.append(
-            ("" if (gate.controlsOC[i] == 0 or gate.controlsOC[i] is None) else "-")
-            + str(control)
-        )
-    constrols_str = ",".join(controls)
-    return f"[{constrols_str}]"
+    controls = [str(control) for control in gate.controls]
+    controls_str = ",".join(controls)
+    return f"[{controls_str}]"
 
 
 def serialize_op(op: Dict[Any, Any]) -> str:
@@ -89,25 +83,11 @@ class ZZGateDecomposer:
 
         def si_compensate(target):
             nonlocal op
-            return {
-                "gate": {
-                    "type": "si",
-                    "targets": [target],
-                    "controls": op.gate.controls,
-                    "controlsOC": op.gate.controlsOC,
-                }
-            }
+            return {"gate": Gate("si", [target], op.gate.controls)}
 
         def s_compensate(target):
             nonlocal op
-            return {
-                "gate": {
-                    "type": "s",
-                    "targets": [target],
-                    "controls": op.gate.controls,
-                    "controlsOC": op.gate.controlsOC,
-                }
-            }
+            return {"gate": Gate("s", [target], op.gate.controls)}
 
         targets = op["gate"]["targets"]
         assert len(targets) == 2
@@ -124,12 +104,7 @@ class ZZGateDecomposer:
         def h_compensate(target):
             nonlocal op
             return {
-                "gate": {
-                    "type": "h",
-                    "targets": [target],
-                    "controls": op.gate.controls,
-                    "controlsOC": op.gate.controlsOC,
-                },
+                "gate": Gate("h", [target], op.gate.controls),
             }
 
         targets = op["gate"]["targets"]
@@ -143,31 +118,22 @@ class ZZGateDecomposer:
     ) -> Tuple[Optional[List[Dict[Any, Any]]], Optional[List[Dict[Any, Any]]]]:
         apply = [
             {
-                "gate": {
-                    "type": "z",
-                    "targets": [op.gate.targets[1]],
-                    "controls": [*op.gate.controls, op.gate.targets[0]],
-                    "controlsOC": [*op.gate.controlsOC, True],
-                    "rotation": -2 * op.gate.rotation,
-                },
+                "gate": Gate(
+                    "z",
+                    [op.gate.targets[1]],
+                    [*op.gate.controls, op.gate.targets[0]],
+                    -2 * op.gate.rotation,
+                )
             },
             {
-                "gate": {
-                    "type": "rz",
-                    "targets": [op.gate.targets[1]],
-                    "controls": op.gate.controls,
-                    "controlsOC": op.gate.controlsOC,
-                    "rotation": op.gate.rotation,
-                },
+                "gate": Gate(
+                    "rz", [op.gate.targets[1]], op.gate.controls, op.gate.rotation
+                ),
             },
             {
-                "gate": {
-                    "type": "rz",
-                    "targets": [op.gate.targets[0]],
-                    "controls": op.gate.controls,
-                    "controlsOC": op.gate.controlsOC,
-                    "rotation": op.gate.rotation,
-                },
+                "gate": Gate(
+                    "rz", [op.gate.targets[0]], op.gate.controls, op.gate.rotation
+                ),
             },
         ]
         return apply, None
@@ -204,10 +170,6 @@ class ZZGateDecomposer:
 
     def __call__(self, op) -> Optional[List[str]]:
         return self._decompose_gate(op)
-
-
-def is_number(obj):
-    return type(obj) in (int, float)
 
 
 def flat_ops(

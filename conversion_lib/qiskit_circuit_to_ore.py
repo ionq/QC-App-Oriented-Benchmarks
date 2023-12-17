@@ -1,5 +1,6 @@
 from qiskit_ionq.helpers import qiskit_to_ionq
 from qiskit import transpile
+from conversion_lib.circuit import Circuit
 
 
 class LocalOrefileBackend:
@@ -20,5 +21,5 @@ def convert_to_ionq_circuit(qiskit_circuit, basis_gates):
 
 def convert(qiskit_circuit, basis_gates):
     ionq_circuit = convert_to_ionq_circuit(qiskit_circuit, basis_gates)
-
-    return ionq_circuit
+    circuit = Circuit.from_json(ionq_circuit)
+    return circuit.encode(decompose=True)
