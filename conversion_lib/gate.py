@@ -52,6 +52,8 @@ class Gate:
         controls: List[Qubit] = [],
         rotation: Optional[Any] = None,
     ):
+        if controls is None:
+            controls = []
         self.type = gate_type.lower()
         self.count = len(targets)
         self.count += len(controls)
@@ -80,7 +82,7 @@ class Gate:
         self.targets = self.resolve(targets)
         self.controls = self.resolve(controls)
 
-        if self.type in HAS_GATE_ANGLE:
+        if self.has_gate_angle():
             self.rotation = rotation if is_number(rotation) else math.pi
         else:
             if rotation is not None:
@@ -92,3 +94,6 @@ class Gate:
         """
         indices = [qubit.index for qubit in qubits]
         return indices
+
+    def has_gate_angle(self) -> bool:
+        return self.type in HAS_GATE_ANGLE

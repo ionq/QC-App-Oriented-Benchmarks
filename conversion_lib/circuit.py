@@ -7,18 +7,35 @@ from typing import Optional
 from typing import Union
 from typing import Generator
 from typing import Tuple
-
-
-from operator import itemgetter
+from typing import Callable
 
 from conversion_lib.gate import Gate
-from conversion_lib.gate import HAS_GATE_ANGLE
 from conversion_lib.qubit_pool import QubitPool
 from conversion_lib.utils import is_number
 
 
+def getitems(*items_to_get: str) -> Callable[[Any], Tuple[Any, ...]]:
+    getters = ()
+    for item in items_to_get:
+
+        def getter_factory(item_spec):
+            def getter(obj):
+                nonlocal item_spec
+                return obj.get(item_spec)
+
+            return getter
+
+        getters += (getter_factory(item),)
+
+    def multigetter(obj):
+        nonlocal getters
+        return tuple([getter(obj) for getter in getters])
+
+    return multigetter
+
+
 def get_gate_type(op):
-    return op["gate"]["type"].lower()
+    return op["gate"].type.lower()
 
 
 def gen_controls(gate: Gate) -> str:
@@ -55,11 +72,11 @@ def serialize_op(op: Dict[Any, Any]) -> str:
         return f"sample {sample}"
     elif gate is not None:
         gate_type = get_gate_type(op)
-        targets = gate["targets"]
+        targets = [str(target) for target in gate.targets]
         targets_str = ",".join(targets)
-        gate_str = f"op ${gate_type} [{targets_str}] ${gen_controls(gate)}"
-        if gate_type in HAS_GATE_ANGLE:
-            rotation = gate["rotation"]
+        gate_str = f"op {gate_type} [{targets_str}] {gen_controls(gate)}"
+        if gate.has_gate_angle():
+            rotation = gate.rotation
             gate_str += f" {rotation}"
         return gate_str
     else:
@@ -144,7 +161,7 @@ class ZZGateDecomposer:
         Returns None if the gate was not actually decomposes - otherwise
         it returns the list of decomposed ops.
         """
-        gate_type = op["gate"]["type"].lower()
+        gate_type = get_gate_type(op)
 
         ops = []
 
@@ -194,7 +211,9 @@ class Circuit:
         self.params = {}  # named parameters
         self.shot_count = 1000  # default number of shots for execution
         self.qubits = []
-        self.max_qubits = 0
+
+    def max_qubits(self):
+        return self.pool.max_qubits
 
     """
     This class represents the series of operations necessary to
@@ -218,13 +237,11 @@ class Circuit:
             # supporting nested op groups
             for op in flat_ops(desc["circuit"]):
                 if op["gate"] is not None:
-                    gate, target, targets, control, controls, rotation = itemgetter(
+                    gate, target, targets, control, controls, rotation = getitems(
                         "gate", "target", "targets", "control", "controls", "rotation"
                     )(op)
                     if c.qubits[0] is None:
                         raise TypeError("no qubits allocated")
-                    if c.qubits[0][gate.lower()] is None:
-                        raise TypeError(f"illegal gate: {gate}")
                     if is_number(targets):
                         targets = [targets]
                     if is_number(controls):
@@ -237,15 +254,15 @@ class Circuit:
                     gate_target = (
                         [c.qubits[target]]
                         if target is not None
-                        else targets
-                        and [c.qubits[qubit_index] for qubit_index in targets]
+                        else [c.qubits[qubit_index] for qubit_index in targets]
                     )
-                    gate_control = (
-                        [c.qubits[control]]
-                        if control is not None
-                        else targets
-                        and [c.qubits[qubit_index] for qubit_index in controls]
-                    )
+                    gate_control = None
+                    if controls is not None:
+                        gate_control = (
+                            [c.qubits[control]]
+                            if control is not None
+                            else [c.qubits[qubit_index] for qubit_index in controls]
+                        )
                     c._add_gate(gate.upper(), gate_target, gate_control, rotation)
         return c
 
@@ -274,11 +291,10 @@ class Circuit:
                 out.append(decomposed_op)
             return len(decomposed_ops)
         else:
-            out.append(op)
             return 0
 
     def encode(self, decompose=True):
-        out = [f"alloc [${self.max_qubits}]"]
+        out = [f"alloc [{self.max_qubits()}]"]
         count = 2  # alloc + free
         for op in self.ops:
             if op.get("call") is not None:
@@ -292,16 +308,16 @@ class Circuit:
             elif op.get("gate") is not None:
                 if decompose:
                     n_decomposed = Circuit.decompose_gate(op, out)
-                    if n_decomposed is not None:
+                    if n_decomposed > 0:
                         count += n_decomposed
                         continue
                 out.append(serialize_op(op))
                 count += 1
         out.append("free")
         out = [
-            "// max qubit ${this.maxQubits}",
-            "// ops count ${count}",
-            "// shots ${this.shotCount}",
+            f"// max qubit {self.max_qubits}",
+            f"// ops count {count}",
+            f"// shots {self.shot_count}",
         ] + out
         return "\n".join(out) + "\n"
 

@@ -31,7 +31,8 @@ def test():
     qv_circs, qv_circs_nomeas = qv.qv_circuits(qubit_lists, max_circuits)
     for circuit_group in qv_circs_nomeas:
         for circuit in circuit_group:
-            qiskit_circuit_to_ore.convert(circuit, basis_gates=basis_gates_array[basis_selector])
+            converted = qiskit_circuit_to_ore.convert(circuit, basis_gates=basis_gates_array[basis_selector])
+            print(converted)
 
 
 test()
