@@ -12,6 +12,7 @@ from typing import Tuple
 from operator import itemgetter
 
 from conversion_lib.gate import Gate
+from conversion_lib.qubit_pool import QubitPool
 
 
 HAS_GATE_ANGLE = {"x", "y", "z", "rx", "ry", "rz", "xx", "yy", "zz"}
@@ -34,39 +35,40 @@ def gen_controls(gate: Gate) -> str:
     return f"[{constrols_str}]"
 
 
-def serialize_op(op):
+def serialize_op(op: Dict[Any, Any]) -> str:
+    gate = op.get("gate")
     if op.get("call") is not None:
         args = []
-        if op.get("qubits") is not None:
-            qubits = op.get("qubits")
+        qubits = op.get("qubits")
+        params = op.get("params")
+        if qubits is not None:
             for key in qubits:
                 qubit_list_str = ",".join([q.index for q in qubits[key]])
                 args.append(
                     f"{key}=[{qubit_list_str}]",
                 )
-        if op.get("params") is not None:
-            params = op.get("params")
+        if params is not None:
             for key in params:
                 args.append(f"{key}={params[key]}")
         args_str = " ".join(args)
-        return f"call {op.call} {args_str}"
+        call_str = str(op["call"])
+        return f"call {call_str} {args_str}"
     elif op.get("label") is not None:
         label = op.get("label")
         return f"label {label}"
     elif op.get("sample") is not None:
         sample = op.get("sample")
         return f"sample {sample}"
-    elif op.get("gate") is not None:
-        gate = op.get("gate")
+    elif gate is not None:
         gate_type = get_gate_type(op)
         targets = gate["targets"]
         targets_str = ",".join(targets)
-        gate_str = f"op ${gate_type} [{targets_str}] ${gen_controls(op.gate)}"
+        gate_str = f"op ${gate_type} [{targets_str}] ${gen_controls(gate)}"
         if gate_type in HAS_GATE_ANGLE:
             rotation = gate["rotation"]
             gate_str += f" {rotation}"
         return gate_str
-    elif op.get("alloc") is None or op.get("free") is None:
+    else:
         raise TypeError(f"unknown op {repr(op)}")
 
 
@@ -170,7 +172,7 @@ class ZZGateDecomposer:
         ]
         return apply, None
 
-    def _decompose_gate(self, op) -> Optional[List[Dict[Any, Any]]]:
+    def _decompose_gate(self, op) -> Optional[List[str]]:
         """
         Decomposes 2q gates into the zz basis.
         Returns None if the gate was not actually decomposes - otherwise
@@ -200,13 +202,8 @@ class ZZGateDecomposer:
             ops += apply_after_stack.pop()
         return [serialize_op(op) for op in ops]
 
-    def __call__(self, op) -> Optional[List[Dict[Any, Any]]]:
+    def __call__(self, op) -> Optional[List[str]]:
         return self._decompose_gate(op)
-
-
-class QubitPool:
-    def alloc(self, circuit: "Circuit"):
-        pass
 
 
 def is_number(obj):
@@ -287,13 +284,12 @@ class Circuit:
                         else targets
                         and [c.qubits[qubit_index] for qubit_index in controls]
                     )
-                    c._add_gate(
-                        gate.upper(), gate.upper(), gate_target, gate_control, rotation
-                    )
+                    c._add_gate(gate.upper(), gate_target, gate_control, rotation)
         return c
 
     def _alloc(self):
-        return self.pool.alloc(self)
+        new_qubit = self.pool.alloc()
+        self.qubits.append(new_qubit)
 
     def alloc(self, n):
         n = max(n or 1, 1)
@@ -347,8 +343,8 @@ class Circuit:
         ] + out
         return "\n".join(out) + "\n"
 
-    def _addOp(self, op):
+    def _add_op(self, op):
         self.ops.append(op)
 
-    def _addGate(self, gate_type, targets, controls, rotation):
-        self._addOp({"gate": Gate(gate_type, targets, controls, rotation)})
+    def _add_gate(self, gate_type, targets, controls, rotation):
+        self._add_op({"gate": Gate(gate_type, targets, controls, rotation)})
