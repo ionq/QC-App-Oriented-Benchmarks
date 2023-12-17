@@ -1,6 +1,6 @@
 from qiskit_ionq.helpers import qiskit_to_ionq
 from qiskit import transpile
-from conversion_lib.circuit import Circuit
+from qiskit2qore.circuit import Circuit
 
 import json
 

@@ -1,4 +1,4 @@
-from conversion_lib.qubit import Qubit
+from qiskit2qore.qubit import Qubit
 
 
 class QubitPool:

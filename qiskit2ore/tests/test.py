@@ -2,15 +2,11 @@ import sys
 from pathlib import Path  # if you haven't already done so
 import json
 
-file = Path(__file__).resolve()
-parent, root = file.parent, file.parents[1]
-sys.path.append(str(root))
 
-import qiskit_circuit_to_ore
+from conversion_lib import qiskit_circuit_to_ore
 
 # Import the qv function.
 import qiskit.ignis.verification.quantum_volume as qv
-from qiskit import execute, Aer, transpile
 
 
 basis_selector = 1

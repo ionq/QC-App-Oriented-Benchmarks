@@ -6,8 +6,8 @@ from typing import Optional
 from enum import Enum
 import math
 
-from conversion_lib.qubit import Qubit
-from conversion_lib.utils import is_number
+from qiskit2qore.qubit import Qubit
+from qiskit2qore.utils import is_number
 
 
 class GATE_TYPES(Enum):

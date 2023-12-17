@@ -9,9 +9,9 @@ from typing import Generator
 from typing import Tuple
 from typing import Callable
 
-from conversion_lib.gate import Gate
-from conversion_lib.qubit_pool import QubitPool
-from conversion_lib.utils import is_number
+from qiskit2qore.gate import Gate
+from qiskit2qore.qubit_pool import QubitPool
+from qiskit2qore.utils import is_number
 
 
 def getitems(*items_to_get: str) -> Callable[[Any], Tuple[Any, ...]]:
