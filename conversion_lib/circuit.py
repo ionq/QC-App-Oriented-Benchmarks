@@ -315,7 +315,7 @@ class Circuit:
                 count += 1
         out.append("free")
         out = [
-            f"// max qubit {self.max_qubits}",
+            f"// max qubit {self.max_qubits()}",
             f"// ops count {count}",
             f"// shots {self.shot_count}",
         ] + out

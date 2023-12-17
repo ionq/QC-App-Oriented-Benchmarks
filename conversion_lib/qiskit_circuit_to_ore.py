@@ -3,8 +3,10 @@ from qiskit import transpile
 from conversion_lib.circuit import Circuit
 
 import json
+
 from typing import Dict
 from typing import Any
+from typing import Tuple
 
 
 class LocalOrefileBackend:
@@ -21,10 +23,10 @@ def convert_to_ionq_circuit(qiskit_circuit, basis_gates) -> Dict[str, Any]:
     )
     ionq_circuit = qiskit_to_ionq(basis_circuit, LocalOrefileBackend())
     ionq_circuit = json.loads(ionq_circuit)
-    return ionq_circuit["input"]
+    return ionq_circuit
 
 
-def convert(qiskit_circuit, basis_gates):
+def convert(qiskit_circuit, basis_gates) -> Tuple[Dict[str, Any], str]:
     ionq_circuit = convert_to_ionq_circuit(qiskit_circuit, basis_gates)
-    circuit = Circuit.from_json(ionq_circuit)
-    return circuit.encode(decompose=True)
+    circuit = Circuit.from_json(ionq_circuit["input"])
+    return ionq_circuit, circuit.encode(decompose=True)
