@@ -1,12 +1,11 @@
 [tool.poetry]
-name = "qiskit2qore"
+name = "qiskit2ore"
 version = "0.1.0"
 description = "directly converts qiskit into various IonQ IRs"
 authors = ["Felix Tripier <tripier@ionq.co>"]
 readme = "README.md"
-packages = [{include="qiskit2qore", from="src"}]
+packages = [{include="qiskit2qore", from="src"}, {include="qiskit2ore", from="src"}]
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-
