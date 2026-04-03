@@ -1,3 +1,4 @@
 matplotlib
 qiskit
 qiskit[visualization]
+fonttools>=4.62.0 # not directly required, pinned by Snyk to avoid a vulnerability
