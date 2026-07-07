@@ -1,3 +1,4 @@
 matplotlib
 qiskit
 qiskit[visualization]
+pillow>=12.3.0 # not directly required, pinned by Snyk to avoid a vulnerability
